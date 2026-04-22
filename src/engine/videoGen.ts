@@ -102,14 +102,14 @@ export default async function main(p: typeof import("@clack/prompts")) {
         { length: peterCount },
         (_, i) => `[p${i}]`,
       ).join("");
-      videoFilters.push(`[2:v]scale=4000:-2,split=${peterCount}${peterPads}`);
+      videoFilters.push(`[2:v]scale=2000:-2,split=${peterCount}${peterPads}`);
     }
     if (hasStewie && stewieCount > 0) {
       const stewiePads = Array.from(
         { length: stewieCount },
         (_, i) => `[s${i}]`,
       ).join("");
-      videoFilters.push(`[3:v]scale=2400:-2,split=${stewieCount}${stewiePads}`);
+      videoFilters.push(`[3:v]scale=1000:-2,split=${stewieCount}${stewiePads}`);
     }
 
     let peterIdx = 0;
