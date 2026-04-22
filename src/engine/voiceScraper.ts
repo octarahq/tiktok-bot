@@ -114,21 +114,38 @@ export class VoiceScraper {
         const textareaSelector = "textarea.textarea";
         await page.waitForSelector(textareaSelector, { timeout: 20000 });
 
+        await page.waitForTimeout(2000);
         await page.click(textareaSelector);
-        await page.evaluate((sel) => {
-          const el = document.querySelector(sel) as HTMLTextAreaElement;
-          if (el) el.value = "";
-        }, textareaSelector);
 
-        await page.type(textareaSelector, text, { delay: 20 });
+        let cleared = false;
+        for (let i = 0; i < 5; i++) {
+          await page.fill(textareaSelector, "");
+          await page.keyboard.press("Control+A");
+          await page.keyboard.press("Backspace");
 
-        await page.evaluate((selector) => {
-          const el = document.querySelector(selector) as HTMLTextAreaElement;
-          if (el) {
-            el.dispatchEvent(new Event("input", { bubbles: true }));
-            el.dispatchEvent(new Event("change", { bubbles: true }));
+          await page.evaluate((sel) => {
+            const el = document.querySelector(sel) as HTMLTextAreaElement;
+            if (el) {
+              el.value = "";
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }, textareaSelector);
+
+          await page.waitForTimeout(500);
+          const currentVal = await page.evaluate(
+            (sel) =>
+              (document.querySelector(sel) as HTMLTextAreaElement)?.value,
+            textareaSelector,
+          );
+          if (!currentVal || currentVal.length === 0) {
+            cleared = true;
+            break;
           }
-        }, textareaSelector);
+          await page.waitForTimeout(1000);
+        }
+
+        await page.type(textareaSelector, text, { delay: 10 });
 
         await page.waitForTimeout(1000);
         await page.click('button:has-text("Generate Voiceover")');
