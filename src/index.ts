@@ -1,6 +1,11 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { GenerateScript, GenerateSubject, GenerateVoices } from "./engine";
+import {
+  GenerateScript,
+  GenerateSubject,
+  GenerateVoices,
+  GenerateVideo,
+} from "./engine";
 import {
   hasSession,
   getSession,
@@ -59,8 +64,8 @@ async function main() {
 
   console.log(pc.green("\nScript:"));
   console.log(pc.cyan(script));
-
   await GenerateVoices(p, script);
+  await GenerateVideo(p);
 }
 
 main();
