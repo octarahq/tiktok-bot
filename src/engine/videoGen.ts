@@ -44,7 +44,7 @@ export default async function main(p: typeof import("@clack/prompts")) {
         end: Number((currentTime + duration).toFixed(3)),
       });
 
-      currentTime += duration + 0.5;
+      currentTime += duration;
     }
 
     const totalAudioDuration =
@@ -150,7 +150,7 @@ PlayResY: 1920
 
 [v4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial Black,80,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,5,0,2,20,20,480,1
+Style: Default,Arial Black,80,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,5,0,2,20,20,960,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -172,17 +172,32 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       const words = text.split(/\s+/);
       const totalWords = words.length;
       const lineDuration = seg.end - seg.start;
-      const wordDuration = lineDuration / totalWords;
 
+      const weights = words.map((w) => {
+        let weight = w.replace(/[^\w]/g, "").length || 1;
+        if (w.endsWith(".") || w.endsWith("!") || w.endsWith("?")) weight += 5;
+        if (w.endsWith(",")) weight += 3;
+        return weight;
+      });
+
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const weightUnit = lineDuration / totalWeight;
+
+      let elapsedInLine = 0;
       for (let w = 0; w < totalWords; w += 3) {
         const chunk = words.slice(w, w + 3);
-        const chunkStartTime = seg.start + w * wordDuration;
-        const chunkEndTime =
-          seg.start + Math.min(totalWords, w + 3) * wordDuration;
+        const chunkWeights = weights.slice(w, w + 3);
+        const chunkTotalWeight = chunkWeights.reduce((a, b) => a + b, 0);
+        const chunkDuration = chunkTotalWeight * weightUnit;
+        const chunkStartTime = seg.start + elapsedInLine;
+        const chunkEndTime = chunkStartTime + chunkDuration;
 
+        let elapsedInChunk = 0;
         for (let j = 0; j < chunk.length; j++) {
-          const highlightStart = chunkStartTime + j * wordDuration;
-          const highlightEnd = chunkStartTime + (j + 1) * wordDuration;
+          const wordWeight = chunkWeights[j]!;
+          const wordDuration = wordWeight * weightUnit;
+          const highlightStart = chunkStartTime + elapsedInChunk;
+          const highlightEnd = highlightStart + wordDuration;
 
           let coloredText = "";
           for (let k = 0; k < chunk.length; k++) {
@@ -194,7 +209,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
           }
 
           assContent += `Dialogue: 0,${formatTime(highlightStart)},${formatTime(highlightEnd)},Default,,0,0,0,,${coloredText.trim()}\n`;
+          elapsedInChunk += wordDuration;
         }
+        elapsedInLine += chunkDuration;
       }
     });
 
@@ -275,39 +292,12 @@ async function mergeAudiosWithDelay(
   output: string,
 ): Promise<void> {
   const videoDir = path.dirname(output);
-  const silenceFile = path.join(videoDir, "silence_gap.mp3");
   const listFile = path.join(videoDir, "concat_list.txt");
 
   try {
-    const sampleRate =
-      execSync(
-        `ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=noprint_wrappers=1:nokey=1 "${files[0]}"`,
-      )
-        .toString()
-        .trim() || "24000";
-    const channels =
-      execSync(
-        `ffprobe -v error -select_streams a:0 -show_entries stream=channels -of default=noprint_wrappers=1:nokey=1 "${files[0]}"`,
-      )
-        .toString()
-        .trim() || "1";
-    const channelLayout = channels === "1" ? "mono" : "stereo";
-
-    await new Promise<void>((resolve, reject) => {
-      ffmpeg()
-        .input(`anullsrc=r=${sampleRate}:cl=${channelLayout}:d=0.5`)
-        .inputFormat("lavfi")
-        .save(silenceFile)
-        .on("end", () => resolve())
-        .on("error", (err) => reject(err));
-    });
-
     let listContent = "";
     files.forEach((f, i) => {
       listContent += `file '${f}'\n`;
-      if (i < files.length - 1) {
-        listContent += `file '${silenceFile}'\n`;
-      }
     });
     fs.writeFileSync(listFile, listContent);
 
@@ -320,7 +310,6 @@ async function mergeAudiosWithDelay(
         .on("error", (err) => reject(err));
     });
   } finally {
-    if (fs.existsSync(silenceFile)) fs.unlinkSync(silenceFile);
     if (fs.existsSync(listFile)) fs.unlinkSync(listFile);
   }
 }
