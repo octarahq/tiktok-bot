@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import { getDuration, getRandomBackground } from "../utils/video";
+import { getSession } from "../utils/session";
 import pc from "picocolors";
 
 export default async function main(p: typeof import("@clack/prompts")) {
@@ -131,6 +132,74 @@ export default async function main(p: typeof import("@clack/prompts")) {
       videoFilters.push(`${lastVideoTag}copy[v_final]`);
     }
 
+    const session = getSession();
+    const script = session.script;
+    if (!script) throw new Error("Script not found in session");
+
+    const scriptLines = script
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.includes(":"))
+      .map((line) => line.split(":")[1]!.trim());
+
+    const assPath = path.join(videoDir, "subtitles.ass");
+    let assContent = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+
+[v4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial Black,80,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,1,5,0,2,20,20,480,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+    function formatTime(seconds: number): string {
+      const date = new Date(seconds * 1000);
+      const h = Math.floor(seconds / 3600);
+      const m = date.getUTCMinutes();
+      const s = date.getUTCSeconds();
+      const ms = Math.floor(date.getUTCMilliseconds() / 10);
+      return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}.${ms.toString().padStart(2, "0")}`;
+    }
+
+    segments.forEach((seg, i) => {
+      const text = scriptLines[i];
+      if (!text) return;
+
+      const words = text.split(/\s+/);
+      const totalWords = words.length;
+      const lineDuration = seg.end - seg.start;
+      const wordDuration = lineDuration / totalWords;
+
+      for (let w = 0; w < totalWords; w += 3) {
+        const chunk = words.slice(w, w + 3);
+        const chunkStartTime = seg.start + w * wordDuration;
+        const chunkEndTime =
+          seg.start + Math.min(totalWords, w + 3) * wordDuration;
+
+        for (let j = 0; j < chunk.length; j++) {
+          const highlightStart = chunkStartTime + j * wordDuration;
+          const highlightEnd = chunkStartTime + (j + 1) * wordDuration;
+
+          let coloredText = "";
+          for (let k = 0; k < chunk.length; k++) {
+            if (k === j) {
+              coloredText += `{\\c&H00FFFF&}${chunk[k]}{\\c&HFFFFFF&} `;
+            } else {
+              coloredText += `${chunk[k]} `;
+            }
+          }
+
+          assContent += `Dialogue: 0,${formatTime(highlightStart)},${formatTime(highlightEnd)},Default,,0,0,0,,${coloredText.trim()}\n`;
+        }
+      }
+    });
+
+    fs.writeFileSync(assPath, assContent);
+
     let audioFilterStr: string;
     if (hasBgAudio) {
       audioFilterStr =
@@ -139,7 +208,10 @@ export default async function main(p: typeof import("@clack/prompts")) {
       audioFilterStr = "[1:a]volume=1.0[a_final]";
     }
 
-    const fullFilter = videoFilters.join(";") + ";" + audioFilterStr;
+    const fullFilter =
+      videoFilters.join(";") +
+      `;[v_final]subtitles='${assPath}'[v_subs];` +
+      audioFilterStr;
 
     const ffmpegArgs = [
       "-y",
@@ -162,7 +234,7 @@ export default async function main(p: typeof import("@clack/prompts")) {
       "-t",
       totalAudioDuration.toFixed(3),
       "-map",
-      "[v_final]",
+      "[v_subs]",
       "-map",
       "[a_final]",
       "-c:v",
