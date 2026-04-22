@@ -20,7 +20,7 @@ export class VoiceScraper {
 
   private async getBrowser(): Promise<Browser> {
     if (!this.browser) {
-      this.browser = await chromium.launch({ headless: false });
+      this.browser = await chromium.launch({ headless: true });
     }
     return this.browser;
   }
