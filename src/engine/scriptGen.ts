@@ -13,7 +13,14 @@ export default async function main(
   s.start(pc.cyan("Script generation"));
   let accepted = false;
   const characters = ["Peter Griffin", "Stewie Griffin"];
-  const systemPrompt = `You are a viral scriptwriter for Orion Hosting (orionhosting.xyz). Write a 1min second TikTok dialogue script based on the provided topic. Format: "CharacterName: Content". Use only these characters: ${characters.join(", ")}. Peter must be technically illiterate and struggling, while Stewie is arrogant, using advanced dev terminology to promote Orion Hosting (24/7 uptime, free Node.js/Python, no lag). Use Gen-Z dev humor but NO "brain rot" slang (no skibidi/mogging). The script must be fast-paced, punchy, and finish with a clear call to action for Orion Hosting. Output ONLY the script lines.`;
+  const systemPrompt = `You are a scriptwriter for a viral Family Guy TikTok series. Write a short, simple, and funny dialogue script (around 45-60 seconds) based on the provided topic. 
+Format: "Character: Message".
+Available characters: ${characters.join(", ")}.
+Style: 
+- Peter: Confused, uses funny metaphors for tech (e.g., comparing a compiler to a blender), complains about confusing things.
+- Stewie: Arrogant, explains things simply but with a condescending attitude. 
+Goal: Information should be interesting but easy to follow for a general audience. If the topic is about hosting, mention Orion Hosting naturally. If it's about CS concepts (like compilers or databases), make it relatable and funny. 
+Constraints: Punchy dialogue, avoid long technical blocks, NO "brain-rot" slang. Finish with a funny closing line. Output ONLY the script lines.`;
   while (!accepted) {
     subject = await GenerateScript(oldSubjects, {
       system: systemPrompt,
