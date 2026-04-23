@@ -6,9 +6,12 @@ const SUBJECT_FILE = path.join(TEMP_DIR, "subject.txt");
 const SCRIPT_FILE = path.join(TEMP_DIR, "script.txt");
 const AUDIO_DIR = path.join(TEMP_DIR, "audio");
 
+const CHARACTERS_FILE = path.join(TEMP_DIR, "characters.json");
+
 export interface Session {
   subject: string | null;
   script: string | null;
+  characters: any[] | null;
   hasAudio: boolean;
 }
 
@@ -23,6 +26,9 @@ export function getSession(): Session {
       : null,
     script: fs.existsSync(SCRIPT_FILE)
       ? fs.readFileSync(SCRIPT_FILE, "utf-8")
+      : null,
+    characters: fs.existsSync(CHARACTERS_FILE)
+      ? JSON.parse(fs.readFileSync(CHARACTERS_FILE, "utf-8"))
       : null,
     hasAudio: fs.existsSync(AUDIO_DIR) && fs.readdirSync(AUDIO_DIR).length > 0,
   };
@@ -40,6 +46,13 @@ export function saveScript(script: string) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
   }
   fs.writeFileSync(SCRIPT_FILE, script, "utf-8");
+}
+
+export function saveSessionCharacters(characters: any[]) {
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+  }
+  fs.writeFileSync(CHARACTERS_FILE, JSON.stringify(characters, null, 2));
 }
 
 export function clearSession() {

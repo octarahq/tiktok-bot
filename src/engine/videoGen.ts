@@ -6,7 +6,10 @@ import { getDuration, getRandomBackground } from "../utils/video";
 import { getSession } from "../utils/session";
 import pc from "picocolors";
 
-export default async function main(p: typeof import("@clack/prompts")) {
+export default async function main(
+  p: typeof import("@clack/prompts"),
+  characters: { slug: string; image: string }[],
+) {
   const s = p.spinner();
   s.start(pc.cyan("Generating final video..."));
 
@@ -66,12 +69,8 @@ export default async function main(p: typeof import("@clack/prompts")) {
 
     await mergeAudiosWithDelay(fullAudioPaths, tempAudio);
 
-    const peterPath = path.join(assetsDir, "peter-griffin.png");
-    const stewiePath = path.join(assetsDir, "stewie-griffin.png");
-
-    const usedChars = new Set(segments.map((s) => s.character));
-    const hasPeter = usedChars.has("peter-griffin");
-    const hasStewie = usedChars.has("stewie-griffin");
+    const usedSlugs = Array.from(new Set(segments.map((s) => s.character)));
+    const activeChars = characters.filter((c) => usedSlugs.includes(c.slug));
 
     let hasBgAudio = false;
     try {
@@ -85,42 +84,44 @@ export default async function main(p: typeof import("@clack/prompts")) {
       hasBgAudio = false;
     }
 
-    let peterCount = 0;
-    let stewieCount = 0;
-    for (const seg of segments) {
-      if (seg.character.includes("peter")) peterCount++;
-      else stewieCount++;
-    }
+    const charSpeaksCount: Record<string, number> = {};
+    segments.forEach((seg) => {
+      charSpeaksCount[seg.character] =
+        (charSpeaksCount[seg.character] || 0) + 1;
+    });
 
     const videoFilters: string[] = [];
     videoFilters.push(
       "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]",
     );
 
-    if (hasPeter && peterCount > 0) {
-      const peterPads = Array.from(
-        { length: peterCount },
-        (_, i) => `[p${i}]`,
-      ).join("");
-      videoFilters.push(`[2:v]scale=2000:-2,split=${peterCount}${peterPads}`);
-    }
-    if (hasStewie && stewieCount > 0) {
-      const stewiePads = Array.from(
-        { length: stewieCount },
-        (_, i) => `[s${i}]`,
-      ).join("");
-      videoFilters.push(`[3:v]scale=1000:-2,split=${stewieCount}${stewiePads}`);
-    }
+    activeChars.forEach((c, i) => {
+      const inputIdx = i + 2;
+      const count = charSpeaksCount[c.slug] || 0;
+      if (count > 0) {
+        const pads = Array.from(
+          { length: count },
+          (_, j) => `[c${i}_p${j}]`,
+        ).join("");
+        
+        const scale = c.slug.includes("peter") ? "2000:-2" : "1000:-2";
+        videoFilters.push(
+          `[${inputIdx}:v]scale=${scale},split=${count}${pads}`,
+        );
+      }
+    });
 
-    let peterIdx = 0;
-    let stewieIdx = 0;
     let lastVideoTag = "[bg]";
+    const charPadIdx: Record<string, number> = {};
+
     segments.forEach((seg, i) => {
-      const isPeter = seg.character.includes("peter");
+      const charIdx = activeChars.findIndex((c) => c.slug === seg.character);
+      if (charIdx === -1) return;
 
-      if ((isPeter && !hasPeter) || (!isPeter && !hasStewie)) return;
+      const pIdx = charPadIdx[seg.character] || 0;
+      const charTag = `[c${charIdx}_p${pIdx}]`;
+      charPadIdx[seg.character] = pIdx + 1;
 
-      const charTag = isPeter ? `[p${peterIdx++}]` : `[s${stewieIdx++}]`;
       const nextTag = i === segments.length - 1 ? "[v_final]" : `[v${i}]`;
       videoFilters.push(
         `${lastVideoTag}${charTag}overlay=x=(W-w)/2:y=H-h-50:enable='between(t,${seg.start},${seg.end})'${nextTag}`,
@@ -230,6 +231,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       `;[v_final]subtitles='${assPath}'[v_subs];` +
       audioFilterStr;
 
+    const charInputs: string[] = [];
+    activeChars.forEach((c) => {
+      charInputs.push("-loop", "1", "-i", path.join(assetsDir, c.image));
+    });
+
     const ffmpegArgs = [
       "-y",
       "-ss",
@@ -238,14 +244,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       backgroundPath,
       "-i",
       tempAudio,
-      "-loop",
-      "1",
-      "-i",
-      peterPath,
-      "-loop",
-      "1",
-      "-i",
-      stewiePath,
+      ...charInputs,
       "-filter_complex",
       fullFilter,
       "-t",

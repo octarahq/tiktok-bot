@@ -3,24 +3,25 @@ import loadOldSubjects from "@/utils/loadOldSubjects";
 import "dotenv/config";
 import pc from "picocolors";
 
+import { getAIPrompts } from "./config.js";
+
 export default async function main(
   p: typeof import("@clack/prompts"),
   subject: string,
+  characters: { name: string; description: string }[],
 ) {
   const oldSubjects = await loadOldSubjects();
+  const aiPrompts = getAIPrompts();
 
   const s = p.spinner();
   s.start(pc.cyan("Script generation"));
   let accepted = false;
-  const characters = ["Peter Griffin", "Stewie Griffin"];
-  const systemPrompt = `You are a scriptwriter for a viral Family Guy TikTok series. Write a short, simple, and funny dialogue script (around 45-60 seconds) based on the provided topic. 
-Format: "Character: Message".
-Available characters: ${characters.join(", ")}.
-Style: 
-- Peter: Confused, uses funny metaphors for tech (e.g., comparing a compiler to a blender), complains about confusing things.
-- Stewie: Arrogant, explains things simply but with a condescending attitude. 
-Goal: Information should be interesting but easy to follow for a general audience. If the topic is about hosting, mention Orion Hosting naturally. If it's about CS concepts (like compilers or databases), make it relatable and funny. 
-Constraints: Punchy dialogue, avoid long technical blocks, NO "brain-rot" slang. Finish with a funny closing line. Output ONLY the script lines.`;
+
+  const charDetails = characters
+    .map((c) => `- ${c.name}: ${c.description}`)
+    .join("\n");
+
+  const systemPrompt = `${aiPrompts.script}\n\nTopic: "${subject}"\n\nCharacters:\n${charDetails}`;
   while (!accepted) {
     subject = await GenerateScript(oldSubjects, {
       system: systemPrompt,

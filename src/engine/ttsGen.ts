@@ -6,6 +6,7 @@ import pc from "picocolors";
 export default async function main(
   p: typeof import("@clack/prompts"),
   script: string,
+  characters: { name: string; slug: string }[],
 ) {
   const s = p.spinner();
   s.start(pc.cyan("Voice generation..."));
@@ -18,33 +19,34 @@ export default async function main(
     let index = 0;
     for (const textLine of lines) {
       const separatorIndex = textLine.indexOf(":");
-      const character = textLine
-        .substring(0, separatorIndex)
-        .trim()
-        .toLowerCase()
-        .includes("stewie")
-        ? "stewie-griffin"
-        : "peter-griffin";
+      const speakerName = textLine.substring(0, separatorIndex).trim();
       const content = textLine.substring(separatorIndex + 1).trim();
 
-      if (character && content) {
+      const characterData = characters.find(
+        (c) => c.name.toLowerCase() === speakerName.toLowerCase(),
+      );
+      const characterSlug = characterData
+        ? characterData.slug
+        : "peter-griffin";
+
+      if (characterSlug && content) {
         const outputDir = path.join(process.cwd(), "temp/audio");
-        const filename = `${index.toString().padStart(2, "0")}-${character}.mp3`;
+        const filename = `${index.toString().padStart(2, "0")}-${characterSlug}.mp3`;
         const outputFile = path.join(outputDir, filename);
 
         if (fs.existsSync(outputFile)) {
           s.message(
             pc.gray(
-              `Voice already exists for ${character} (line ${index + 1}), skipping...`,
+              `Voice already exists for ${characterSlug} (line ${index + 1}), skipping...`,
             ),
           );
         } else {
           s.message(
             pc.yellow(
-              `Generating voice for ${character} (line ${index + 1}/${lenLines})...`,
+              `Generating voice for ${characterSlug} (line ${index + 1}/${lenLines})...`,
             ),
           );
-          await generateCharacterVoice(character, content, index);
+          await generateCharacterVoice(characterSlug, content, index);
         }
         index++;
       }
