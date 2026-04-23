@@ -14,20 +14,22 @@
   <a href="https://tools.octara.xyz"><img src="https://img.shields.io/badge/Website-tools.octara.xyz-blue.svg" alt="Website" /></a>
 </p>
 
-## 📖 About
+## About
 
 **TikTok Bot** is an automated video generation platform designed to create viral TikTok content in minutes. Built by **Octara**, it automates the entire pipeline from scriptwriting to final video assembly, featuring AI-generated scripts, realistic voice-overs, and dynamic character animations.
 
-## ✨ Features
+## Features
 
-- 📝 **AI Script Generation**: Powered by Google Gemini to create engaging and trending scripts.
-- 🎙️ **Voice Synthesis**: Automatic voice-over generation with character-specific voices.
-- 🎭 **Dynamic Character Overlays**: Automatically syncs character visuals (like Peter and Stewie Griffin) with speaking segments.
-- 🎬 **Automatic Video Assembly**: Mixes background footage, audio tracks, and word-highlighting subtitles seamlessly.
-- 💾 **Session Management**: Built-in system to save and resume progress, ensuring you never lose your work.
-- 🖌️ **Pro Subtitles**: High-quality `.ass` subtitles with dynamic word highlighting.
+- **AI Script Generation**: Powered by Google Gemini to create engaging and trending scripts.
+- **Voice Synthesis**: Automatic voice-over generation with character-specific voices.
+- **Manageable Characters**: Add, edit, or remove characters via the built-in configuration menu.
+- **Manageable Backgrounds**: List, add, or remove background videos easily.
+- **Dynamic Character Overlays**: Automatically syncs character visuals with speaking segments, supporting custom characters.
+- **Automatic Video Assembly**: Mixes background footage, audio tracks, and word-highlighting subtitles seamlessly.
+- **Session Management**: Built-in system to save and resume progress, ensuring you never lose your work.
+- **Pro Subtitles**: High-quality `.ass` subtitles with dynamic word highlighting.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -64,7 +66,7 @@ To start the interactive video generation process:
 npm run start
 ```
 
-## 🛠️ Usage Tutorial
+## Usage Tutorial
 
 Using the TikTok Bot is simple and guided by an interactive CLI.
 
@@ -77,12 +79,12 @@ Using the TikTok Bot is simple and guided by an interactive CLI.
 7. **Final Rendering**: FFmpeg will assemble the video, overlays, and subtitles.
 8. **Output**: Your final video will be saved in `video/video.mp4`, ready for upload!
 
-## 🔗 Links
+## Links
 
 - **Official Website**: [tools.octara.xyz](https://tools.octara.xyz)
 - **GitHub Repository**: [octarahq/tiktok-bot](https://github.com/octarahq/tiktok-bot)
 - **Octara HQ**: [octara.xyz](https://octara.xyz)
 
-## 🆘 Help
+## Help
 
 If you encounter any issues or have questions, feel free to join our **[Discord Server](https://octara.xyz/api/discord)** or open an issue on GitHub.
