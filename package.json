@@ -5,10 +5,9 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "start": "npm run build && tsx src/index.ts",
     "tsx": "tsx",
     "build": "tsc",
-    "start": "node dist/index.js",
     "init": "tsx src/scripts/init.ts"
   },
   "keywords": [],
