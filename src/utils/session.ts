@@ -13,6 +13,7 @@ export interface Session {
   script: string | null;
   characters: any[] | null;
   hasAudio: boolean;
+  hasVideo: boolean;
 }
 
 export function hasSession(): boolean {
@@ -31,6 +32,7 @@ export function getSession(): Session {
       ? JSON.parse(fs.readFileSync(CHARACTERS_FILE, "utf-8"))
       : null,
     hasAudio: fs.existsSync(AUDIO_DIR) && fs.readdirSync(AUDIO_DIR).length > 0,
+    hasVideo: fs.existsSync(path.join(TEMP_DIR, "video/video.mp4")),
   };
 }
 

@@ -5,6 +5,8 @@ import {
   GenerateSubject,
   GenerateVoices,
   GenerateVideo,
+  ExportVideo,
+  FinalMenu,
 } from "./engine/index.js";
 import {
   hasSession,
@@ -121,8 +123,22 @@ async function main() {
 
   console.log(pc.green("\nScript:"));
   console.log(pc.cyan(script));
-  await GenerateVoices(p, script, characters);
-  await GenerateVideo(p, characters);
+
+  const session = getSession();
+
+  if (!session.hasAudio) {
+    await GenerateVoices(p, script, characters);
+  } else {
+    p.log.info(pc.green("Audio already generated, skipping..."));
+  }
+
+  if (!session.hasVideo) {
+    await GenerateVideo(p, characters);
+  } else {
+    p.log.info(pc.green("Video already generated, skipping..."));
+  }
+
+  await FinalMenu(p);
 }
 
 main();

@@ -68,6 +68,11 @@ export default async function sessionMenu(
       ),
     );
     console.log(pc.white(`Audio: ${audioStatus}`));
+    console.log(
+      pc.white(
+        `Video: ${session.hasVideo ? pc.green("Generated") : pc.red("Not generated")}`,
+      ),
+    );
     console.log(pc.cyan("--------------------\n"));
     return sessionMenu(prompts);
   } else if (action === "clear") {
