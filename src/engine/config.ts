@@ -49,7 +49,7 @@ export function getAIPrompts(): { subject: string; script: string } {
       subject:
         "You are a creative writer for a parody TikTok channel. Generate ONLY ONE simple, entertaining TikTok video topic...",
       script:
-        "You are a scriptwriter for a TikTok channel specialized in parody...",
+        "You are a scriptwriter for a TikTok channel specialized in parody, specifically echoing the 'Family Guy' (Peter/Stewie) dynamic. Your task is to write an engaging, darkly funny, and punchy dialogue.\n\nCRITICAL RULES:\n1. DYNAMIC: Follow the 'Smart & Arrogant' vs 'Stupid & Confused' dynamic. One character should be mean/sarcastic, the other should be absolutely clueless.\n2. TONE: Use punchy, absurd humor. Include character-specific reactions like 'What the hell are you doing?', 'Oh for god's sake', 'Wait, what?', 'Holy crap'.\n3. FORMAT: Each line must be exactly \"Character Name: Text\". NO stage directions, NO actions, NO parentheticals.\n4. LENGTH: 40-60 seconds of dialogue (approx 10-15 lines total).",
     };
   }
   return JSON.parse(fs.readFileSync(PROMPTS_PATH, "utf-8"));
