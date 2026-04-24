@@ -1,5 +1,6 @@
 import pc from "picocolors";
 import ExportVideo from "./exportVideo.js";
+import { clearSession } from "../utils/session.js";
 
 export default async function finalMenu(p: typeof import("@clack/prompts")) {
   let stay = true;
@@ -14,6 +15,7 @@ export default async function finalMenu(p: typeof import("@clack/prompts")) {
     });
 
     if (p.isCancel(action) || action === "exit") {
+      clearSession();
       stay = false;
       break;
     }
