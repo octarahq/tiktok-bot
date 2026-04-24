@@ -116,13 +116,28 @@ async function promptsMenu(prompts: typeof p) {
 
     if (action === "subject" || action === "script") {
       const type = action as "subject" | "script";
-      const newPrompt = await prompts.text({
-        message: `Edit ${type} prompt:`,
-        initialValue: aiPrompts[type],
-      });
 
-      if (!prompts.isCancel(newPrompt)) {
-        aiPrompts[type] = newPrompt as string;
+      let newPrompt: string | undefined;
+      try {
+        const originalEditor = process.env.EDITOR;
+        const originalVisual = process.env.VISUAL;
+        process.env.EDITOR = "nano";
+        process.env.VISUAL = "nano";
+
+        const { editor } = await import("@inquirer/prompts");
+        newPrompt = await editor({
+          message: `Edit ${type} prompt:`,
+          default: aiPrompts[type],
+        });
+
+        process.env.EDITOR = originalEditor;
+        process.env.VISUAL = originalVisual;
+      } catch (e) {
+        newPrompt = undefined;
+      }
+
+      if (newPrompt !== undefined) {
+        aiPrompts[type] = newPrompt;
         saveAIPrompts(aiPrompts);
         console.log(pc.green(`${type} prompt updated!`));
       }
