@@ -58,6 +58,32 @@ export function saveSessionCharacters(characters: any[]) {
 }
 
 export function clearSession() {
+  const OLD_SUBJECTS_PATH = path.join(
+    process.cwd(),
+    "src/data/old_subjects.json",
+  );
+
+  if (fs.existsSync(SUBJECT_FILE)) {
+    try {
+      const subject = fs.readFileSync(SUBJECT_FILE, "utf-8").trim();
+      if (subject) {
+        let history: string[] = [];
+        if (fs.existsSync(OLD_SUBJECTS_PATH)) {
+          history = JSON.parse(fs.readFileSync(OLD_SUBJECTS_PATH, "utf-8"));
+        }
+        if (!history.includes(subject)) {
+          history.push(subject);
+          const dataDir = path.dirname(OLD_SUBJECTS_PATH);
+          if (!fs.existsSync(dataDir))
+            fs.mkdirSync(dataDir, { recursive: true });
+          fs.writeFileSync(OLD_SUBJECTS_PATH, JSON.stringify(history, null, 2));
+        }
+      }
+    } catch (error) {
+      console.error("Error saving subject to history:", error);
+    }
+  }
+
   if (fs.existsSync(TEMP_DIR)) {
     fs.rmSync(TEMP_DIR, { recursive: true, force: true });
   }
