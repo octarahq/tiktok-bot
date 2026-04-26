@@ -106,13 +106,30 @@ export class VoiceScraper {
       const page = await context.newPage();
 
       try {
-        const characterSlug = character.toLowerCase().replace(" ", "-");
+        const characterSlug = character
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, "-");
         const url = `https://nicevoice.org/ai-voice-generator/${characterSlug}/`;
 
+        console.log(pc.gray(`[NiceVoice] Navigating to: ${url}`));
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
 
+        const currentUrl = page.url();
+        if (!currentUrl.includes(`/ai-voice-generator/${characterSlug}`)) {
+          throw new Error(
+            `Voice slug "${characterSlug}" is invalid or not found (Redirected to ${currentUrl})`,
+          );
+        }
+
         const textareaSelector = "textarea.textarea";
-        await page.waitForSelector(textareaSelector, { timeout: 20000 });
+        try {
+          await page.waitForSelector(textareaSelector, { timeout: 15000 });
+        } catch (e) {
+          throw new Error(
+            `Textarea not found on page. The character page might have changed layout.`,
+          );
+        }
 
         await page.waitForTimeout(2000);
         await page.click(textareaSelector);
