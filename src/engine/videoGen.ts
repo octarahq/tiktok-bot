@@ -104,8 +104,8 @@ export default async function main(
           (_, j) => `[c${i}_p${j}]`,
         ).join("");
 
-        const maxWidth = c.slug.includes("peter") ? 750 : 500;
-        const maxHeight = 850;
+        const maxWidth = c.slug.includes("peter") ? 950 : 750;
+        const maxHeight = 1200;
         const scale = `${maxWidth}:${maxHeight}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
         videoFilters.push(
           `[${inputIdx}:v]scale=${scale},split=${count}${pads}`,

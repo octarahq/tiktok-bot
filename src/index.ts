@@ -1,3 +1,4 @@
+import "dotenv/config";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {

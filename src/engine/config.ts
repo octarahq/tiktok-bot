@@ -47,7 +47,7 @@ export function getAIPrompts(): { subject: string; script: string } {
   if (!fs.existsSync(PROMPTS_PATH)) {
     return {
       subject:
-        "You are a creative writer for a parody TikTok channel. Generate ONLY ONE simple, entertaining TikTok video topic...",
+        "You are a creative writer for a parody TikTok channel. Your goal is to generate HIGHLY UNIQUE, surprising, and engaging TikTok video topics. Avoid generic ideas. Explore different genres: tech, history, daily life, absurdism, etc. Generate ONLY ONE simple, entertaining TikTok video topic.",
       script:
         "You are a scriptwriter for a TikTok channel specialized in parody, specifically echoing the 'Family Guy' (Peter/Stewie) dynamic. Your task is to write an engaging, darkly funny, and punchy dialogue.\n\nCRITICAL RULES:\n1. DYNAMIC: Follow the 'Smart & Arrogant' vs 'Stupid & Confused' dynamic. One character should be mean/sarcastic, the other should be absolutely clueless.\n2. TONE: Use punchy, absurd humor. Include character-specific reactions like 'What the hell are you doing?', 'Oh for god's sake', 'Wait, what?', 'Holy crap'.\n3. FORMAT: Each line must be exactly \"Character Name: Text\". NO stage directions, NO actions, NO parentheticals.\n4. LENGTH: 40-60 seconds of dialogue (approx 10-15 lines total).",
     };
@@ -61,6 +61,38 @@ export function saveAIPrompts(prompts: { subject: string; script: string }) {
   fs.writeFileSync(PROMPTS_PATH, JSON.stringify(prompts, null, 2));
 }
 
+export interface GlobalConfig {
+  hashtags: string[];
+  docs?: {
+    sitemapUrl: string;
+    resourceExtension: string;
+  };
+}
+
+export function getGlobalConfig(): GlobalConfig {
+  if (!fs.existsSync(GLOBAL_CONFIG_PATH)) {
+    return { hashtags: ["#fyp", "#tutorial", "#automation"] };
+  }
+  return JSON.parse(fs.readFileSync(GLOBAL_CONFIG_PATH, "utf-8"));
+}
+
+export function getHashtags(): string[] {
+  return getGlobalConfig().hashtags || ["#fyp", "#tutorial", "#automation"];
+}
+
+export function saveGlobalConfig(config: GlobalConfig) {
+  const dir = path.dirname(GLOBAL_CONFIG_PATH);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(GLOBAL_CONFIG_PATH, JSON.stringify(config, null, 2));
+}
+
+export function saveHashtags(hashtags: string[]) {
+  const config = getGlobalConfig();
+  saveGlobalConfig({ ...config, hashtags });
+}
+
+const GLOBAL_CONFIG_PATH = path.join(process.cwd(), "src/data/config.json");
+
 export default async function configMenu(
   prompts: typeof p,
 ): Promise<"resume" | void> {
@@ -71,6 +103,8 @@ export default async function configMenu(
       { value: "characters", label: "Manage Characters" },
       { value: "backgrounds", label: "Manage Backgrounds" },
       { value: "prompts", label: "Manage AI Prompts" },
+      { value: "hashtags", label: "Manage Hashtags" },
+      { value: "docs", label: "Manage Documentation" },
       { value: "back", label: "Back to main menu" },
     ];
 
@@ -90,6 +124,10 @@ export default async function configMenu(
       await backgroundsMenu(prompts);
     } else if (action === "prompts") {
       await promptsMenu(prompts);
+    } else if (action === "hashtags") {
+      await hashtagsMenu(prompts);
+    } else if (action === "docs") {
+      await docsMenu(prompts);
     }
   }
 }
@@ -365,4 +403,115 @@ async function promptCharacterInfo(
     image: image as string,
     description: description as string,
   };
+}
+
+async function hashtagsMenu(prompts: typeof p) {
+  let exit = false;
+
+  while (!exit) {
+    const hashtags = getHashtags();
+
+    const action = await prompts.select({
+      message: "Hashtags Configuration",
+      options: [
+        { value: "list", label: "List hashtags" },
+        { value: "add", label: "Add hashtag" },
+        { value: "delete", label: "Delete hashtag" },
+        { value: "back", label: "Back" },
+      ],
+    });
+
+    if (prompts.isCancel(action) || action === "back") {
+      exit = true;
+      continue;
+    }
+
+    switch (action) {
+      case "list":
+        console.log(pc.cyan("\n--- Current Hashtags ---"));
+        console.log(hashtags.join(" "));
+        console.log(pc.cyan("------------------------\n"));
+        break;
+
+      case "add":
+        const newHashtag = await prompts.text({
+          message: "New hashtag (with #):",
+          validate: (val) =>
+            !val?.startsWith("#") ? "Must start with #" : undefined,
+        });
+        if (!prompts.isCancel(newHashtag)) {
+          saveHashtags([...hashtags, newHashtag as string]);
+          console.log(pc.green("Hashtag added!"));
+        }
+        break;
+
+      case "delete":
+        const toDelete = await prompts.multiselect({
+          message: "Select hashtags to delete",
+          options: hashtags.map((h) => ({ value: h, label: h })),
+        });
+        if (!prompts.isCancel(toDelete)) {
+          const newHashtags = hashtags.filter((h) => !toDelete.includes(h));
+          saveHashtags(newHashtags);
+          console.log(pc.red("Hashtags updated."));
+        }
+        break;
+    }
+  }
+}
+
+async function docsMenu(prompts: typeof p) {
+  let exit = false;
+
+  while (!exit) {
+    const config = getGlobalConfig();
+
+    const action = await prompts.select({
+      message: "Documentation Configuration",
+      options: [
+        { value: "sitemap", label: "Edit Sitemap URL" },
+        { value: "extension", label: "Edit Resource Extension" },
+        { value: "back", label: "Back" },
+      ],
+    });
+
+    if (prompts.isCancel(action) || action === "back") {
+      exit = true;
+      continue;
+    }
+
+    if (action === "sitemap") {
+      const url = await prompts.text({
+        message: "Sitemap URL (xml):",
+        initialValue: config.docs?.sitemapUrl || "",
+        placeholder: "https://docs.orionhost.xyz/sitemap.xml",
+      });
+      if (!prompts.isCancel(url)) {
+        saveGlobalConfig({
+          ...config,
+          docs: {
+            sitemapUrl: url as string,
+            resourceExtension: config.docs?.resourceExtension || "",
+          },
+        });
+        console.log(pc.green("Sitemap URL updated!"));
+      }
+    } else if (action === "extension") {
+      const ext = await prompts.text({
+        message: "Resource extension (optional, e.g. .mdx):",
+        initialValue: config.docs?.resourceExtension || "",
+        placeholder: ".mdx",
+      });
+      if (!prompts.isCancel(ext)) {
+        saveGlobalConfig({
+          ...config,
+          docs: {
+            sitemapUrl: config.docs?.sitemapUrl || "",
+            resourceExtension: ext as string,
+          },
+        });
+        console.log(pc.green("Resource extension updated!"));
+      }
+    }
+  }
 }

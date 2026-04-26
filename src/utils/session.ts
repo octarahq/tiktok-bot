@@ -57,7 +57,7 @@ export function saveSessionCharacters(characters: any[]) {
   fs.writeFileSync(CHARACTERS_FILE, JSON.stringify(characters, null, 2));
 }
 
-export function clearSession() {
+export function clearSession(deleteTemp: boolean = true) {
   const OLD_SUBJECTS_PATH = path.join(
     process.cwd(),
     "src/data/old_subjects.json",
@@ -84,9 +84,9 @@ export function clearSession() {
     }
   }
 
-  if (fs.existsSync(TEMP_DIR)) {
+  if (deleteTemp && fs.existsSync(TEMP_DIR)) {
     fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+    fs.mkdirSync(AUDIO_DIR, { recursive: true });
   }
-  fs.mkdirSync(TEMP_DIR, { recursive: true });
-  fs.mkdirSync(AUDIO_DIR, { recursive: true });
 }

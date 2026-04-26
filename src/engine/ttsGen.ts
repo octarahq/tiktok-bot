@@ -23,11 +23,21 @@ export default async function main(
       const content = textLine.substring(separatorIndex + 1).trim();
 
       const characterData = characters.find(
-        (c) => c.name.toLowerCase() === speakerName.toLowerCase(),
+        (c) =>
+          c.name.toLowerCase() === speakerName.toLowerCase() ||
+          c.name.toLowerCase().includes(speakerName.toLowerCase()) ||
+          speakerName.toLowerCase().includes(c.name.toLowerCase()),
       );
-      const characterSlug = characterData
-        ? characterData.slug
-        : "peter-griffin";
+      const characterSlug = characterData ? characterData.slug : null;
+
+      if (!characterSlug) {
+        console.warn(
+          pc.yellow(
+            `No character found for speaker: ${speakerName}. Skipping.`,
+          ),
+        );
+        continue;
+      }
 
       if (characterSlug && content) {
         const outputDir = path.join(process.cwd(), "temp/audio");

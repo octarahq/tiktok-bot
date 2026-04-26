@@ -15,7 +15,12 @@ export default async function finalMenu(p: typeof import("@clack/prompts")) {
     });
 
     if (p.isCancel(action) || action === "exit") {
-      clearSession();
+      const deleteTemp = await p.confirm({
+        message: "Do you want to delete temporary files from this session?",
+        initialValue: true,
+      });
+
+      clearSession(p.isCancel(deleteTemp) ? true : deleteTemp);
       stay = false;
       break;
     }

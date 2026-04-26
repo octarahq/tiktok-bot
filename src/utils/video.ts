@@ -22,3 +22,14 @@ export function getRandomBackground(): string {
   const randomFile = files[Math.floor(Math.random() * files.length)];
   return path.join(bgDir, randomFile!);
 }
+
+export function generateThumbnail(videoPath: string, outputPath: string): void {
+  try {
+    execSync(
+      `ffmpeg -i "${videoPath}" -ss 00:00:00 -vframes 1 -q:v 2 "${outputPath}" -y`,
+      { stdio: "ignore" },
+    );
+  } catch (error) {
+    console.error(`Error generating thumbnail for ${videoPath}:`, error);
+  }
+}
